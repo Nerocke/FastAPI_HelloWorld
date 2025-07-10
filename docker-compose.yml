@@ -16,6 +16,8 @@ services:
       - "traefik.http.routers.fastapi.rule=Host(`ethan.soudry-ort.online`)"
       - "traefik.http.routers.fastapi.entrypoints=websecure"
       - "traefik.http.routers.fastapi.tls.certresolver=myresolver"
+    networks:
+      - web
 
   traefik:
     image: "traefik:v2.6"
@@ -52,3 +54,7 @@ services:
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
       - "traefik.http.routers.redirs.entrypoints=websecure"
       - "traefik.http.routers.redirs.middlewares=redirect-to-https"
+
+networks:
+  web:
+    driver: bridge
