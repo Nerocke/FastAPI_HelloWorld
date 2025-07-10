@@ -1,0 +1,50 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18  # Mets la version adaptée
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | base64 -d > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy application
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            set -e  # Arrêter le script en cas d'erreur
+
+            echo "📥 Pull le code..."
+            cd /home/divin/TpReactEthan || exit 1
+            git pull origin main
+
+            echo "🛑 remove les containers..."
+            docker-compose down
+
+            echo "🧹 Cleaning up old images and containers..."
+            docker system prune -af
+
+            echo "🚀 Rebuild et demarre..."
+            docker-compose up -d --build
+
+            echo "✅ Déploiement réussi "
+          EOF
+
+      - name: Cleanup pipeline SSH keys
+        run: rm -rf ~/.ssh  # Suppression des clés SSH après exécution
